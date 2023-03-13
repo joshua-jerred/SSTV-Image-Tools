@@ -14,7 +14,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
 
 include_directories(src)
 
-add_executable(example
+add_executable(example-images
   example/example.cpp
   src/sstv-image-tools.cpp
 )
@@ -22,4 +22,4 @@ add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=8)
 add_definitions(-DMAGICKCORE_HDRI_ENABLE=1) # Required or there are linking errors with Magick::Color::Color
 find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_INCLUDE_DIRS})
-target_link_libraries(example ${ImageMagick_LIBRARIES})
+target_link_libraries(example-images ${ImageMagick_LIBRARIES})
