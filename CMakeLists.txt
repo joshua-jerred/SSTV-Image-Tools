@@ -9,17 +9,23 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
 	-Wall \
 	-Wextra \
 	-Weffc++ \
-	-Wdisabled-optimization \
-	-Wno-unused-variable")
+	-Wunused-variable \
+	-Wno-type-limits \
+	-Wno-float-equal")
+# no type limits and no float equal are for the ImageMagick library
 
-include_directories(src)
-
-add_executable(example-images
-  example/example.cpp
-  src/sstv-image-tools.cpp
+include_directories(include)
+add_library(sstv-image-tools
+	src/sstv-image-tools.cpp
 )
 add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=8)
 add_definitions(-DMAGICKCORE_HDRI_ENABLE=1) # Required or there are linking errors with Magick::Color::Color
 find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_INCLUDE_DIRS})
-target_link_libraries(example-images ${ImageMagick_LIBRARIES})
+target_link_libraries(sstv-image-tools ${ImageMagick_LIBRARIES})
+
+# Example
+add_executable(example-images
+  example/example.cpp
+)
+target_link_libraries(example-images sstv-image-tools)
