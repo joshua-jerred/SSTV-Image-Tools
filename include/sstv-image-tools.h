@@ -47,7 +47,7 @@ class SstvImage {
             std::string destination_image_path = "", bool crop = true);
   ~SstvImage() {}
 
-  void Write();
+  void Write(); /** @todo should pass the destination path here*/
 
   void AddCallSign(const std::string &callsign,
                    const SstvImage::Color &color = {-2, -2, -2});

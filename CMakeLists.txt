@@ -29,3 +29,6 @@ add_executable(example-images
   example/example.cpp
 )
 target_link_libraries(example-images sstv-image-tools)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/example/test1.png ${CMAKE_CURRENT_BINARY_DIR}/test1.png COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/example/test2.png ${CMAKE_CURRENT_BINARY_DIR}/test2.png COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/example/test3.jpg ${CMAKE_CURRENT_BINARY_DIR}/test3.jpg COPYONLY)

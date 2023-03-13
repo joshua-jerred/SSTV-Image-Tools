@@ -4,6 +4,28 @@ Currently in development but it's functional. Will be used with the MWAV library
 
 A simple library for manipulating images into common SSTV image formats using Magick++.
 
+Example:
+```cpp
+  SstvImage image(SstvImage::Mode::ROBOT_36_COLOR, "example/test1.png");
+  image.AddCallSign("N0CALL");
+  image.Write("converted_test1.png");
+```
+
+```cpp
+  SstvImage image(SstvImage::Mode::ROBOT_36_COLOR, "example/test1.png");
+  /* 
+    From this point forward image is the size of the specified mode.
+    For example, Robot36 is 320x256.
+  */
+  image.AddCallSign("N0CALL");
+
+  SstvImage::Pixel pixel;
+  pixel = image.GetPixel(128, 91, pixel); // Get Pixel returns false if the pixel is out of bounds
+
+  std::cout << (int)pixel.r << " " << (int)pixel.g << " " << (int)pixel.b << std::endl;
+  // 0 191 0
+```
+
 Basic Features:
 - Overlay call sign and ~~message text~~
 - Convert the image to the proper color space
