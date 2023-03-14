@@ -23,7 +23,8 @@ SstvImage::SstvImage(SstvImage::Mode mode, std::string source_image_path,
     image_.read(source_image_path);
     Scale();
   } catch (Magick::Exception &error_) {
-    throw SstvImageToolsException("Failed to read image: " + source_image_path);
+    throw SstvImageToolsException("Failed to read image: " + source_image_path +
+                                  " " + error_.what());
   }
 }
 
@@ -40,16 +41,17 @@ void SstvImage::AddCallSign(const std::string &callsign,
                             const SstvImage::Color &color) {
   (void)color;
 
-  int font_size = 20 * height_scaler_;
+  int font_size = 25 * height_scaler_;
 
-  Magick::DrawableFont font("Arial-Bold");
-  Magick::DrawablePointSize point_size(font_size);
-  Magick::DrawableText text(0, 0 + font_size, callsign);
-  Magick::DrawableStrokeColor stroke_color("red");
-  Magick::DrawableFillColor fill("green");
-
-  std::vector<Magick::Drawable> draw_list({font, point_size, text, stroke_color,
-                                             fill});
+  std::vector<Magick::Drawable> draw_list(
+    {Magick::DrawableFont("Arial-Bold"), 
+    Magick::DrawablePointSize(font_size), 
+    Magick::DrawableText(0, 0 + font_size * 0.8, callsign),
+    Magick::DrawableStrokeColor("red"),
+    Magick::DrawableStrokeWidth(2),
+    Magick::DrawableStrokeAntialias(true),
+    Magick::DrawableFillColor("green")}
+);
 
   image_.draw(draw_list);
 }
@@ -66,6 +68,20 @@ bool SstvImage::GetPixel(const int x, const int y, SstvImage::Pixel &pixel) {
   pixel.g = pixels[index + 1];
   pixel.b = pixels[index + 2];
   return true;
+}
+
+void SstvImage::AdjustColors() {
+    /*
+  This is a hack to deal with the color space issues. Not a fan of this solution.
+  */
+  image_.quantizeColorSpace(Magick::RGBColorspace);
+  image_.quantizeColors(256);
+  image_.quantize();
+  image_.modifyImage();
+  image_.gamma(1.7);
+  image_.enhance();
+  image_.write("tmp.png");
+  image_.read("tmp.png");
 }
 
 void SstvImage::Scale() {
@@ -103,93 +119,46 @@ void SstvImage::Scale() {
     crop_size.fillArea(true);
     image_.resize(crop_size);
     image_.extent(crop_size, Magick::CenterGravity);
-    
-
   } else {
     crop_size.aspect(true);
     image_.resize(crop_size);
   }
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool ConvertToRobot8(std::string image_path) {
-  Magick::Image image;
-  Magick::Geometry crop_size(160, 120);
-  crop_size.aspect(true);
-  try {
-    image.read(image_path);
-    image.scale(crop_size);
-    image.quantizeColorSpace(Magick::GRAYColorspace);
-    image.quantizeColors(8);
-    image.quantize();
-    image.write(image_path + ".r8.png");
-  } catch (Magick::Exception &error_) {
-    std::cout << "Caught exception: " << error_.what() << std::endl;
-    return 1;
+  //image_.enhance();
+  /*
+  image_.quantizeColorSpace(Magick::RGBColorspace);
+  image_.quantizeColors(256);
+  image_.quantize();
+  image_.modifyImage();
+  image_.colorSpace(Magick::sRGBColorspace);
+  image_.type(Magick::TrueColorType);
+  if (image_.colorSpace() == Magick::sRGBColorspace){
+    std::cout << "sRGBColorspace" << std::endl;
+  } else if (image_.colorSpace() == Magick::RGBColorspace) {
+    std::cout << "RGBColorspace" << std::endl;
+  } else if (image_.colorSpace() == Magick::CMYColorspace) {
+    std::cout << "CMYColorspace" << std::endl;
+  } else if (image_.colorSpace() == Magick::GRAYColorspace) {
+    std::cout << "GRAYColorspace" << std::endl;
+  } else {
+    std::cout << "Unknown colorspace" << std::endl;
   }
-  return 0;
-}
 
-bool ConvertToRobot36(std::string image_path) {
-  Magick::Image image;
-  Magick::Geometry crop_size(320, 240);
-  crop_size.aspect(true);
-  try {
-    image.read(image_path);
-    image.scale(crop_size);
-    image.quantizeColorSpace(Magick::YUVColorspace);
-    image.quantize();
-    image.write(image_path + ".r36.png");
-  } catch (Magick::Exception &error_) {
-    std::cout << "Caught exception: " << error_.what() << std::endl;
-    return 1;
-  }
-  return 0;
-}
+  std::cout << "Channels: " << image_.channels() << std::endl;
+  image_.channel(Magick::RedChannel);
+  */
 
-bool ConvertToCustom8(std::string image_path) {
-  Magick::Image image;
-  try {
-    image.read(image_path);
-    Magick::Geometry crop_size(400, 400);
-    crop_size.aspect(true);
-    image.scale(crop_size);
-    image.crop(crop_size);
-    image.quantizeColorSpace(Magick::GRAYColorspace);
-    image.quantizeColors(200);
-    image.quantize();
-    image.write(image_path + ".c8.png");
-  } catch (Magick::Exception &error_) {
-    std::cout << "exception: " << error_.what() << std::endl;
-    return 1;
-  }
-  return 0;
-}
+  //image_.quantizeColorSpace(Magick::RGBColorspace); // THESE
+  //image_.quantizeColors(256); // THESE
+  //image_.quantize(); // THESE
+  //image_.normalize();
+  //image_.enhance(); Made things a lot worse
 
-bool Pixels(std::string image_path) {
-  Magick::Image image;
-  try {
-    image.read(image_path);
-    Magick::Pixels view(image);
-  } catch (Magick::Exception &error_) {
-    std::cout << "exception: " << error_.what() << std::endl;
-    return 1;
-  }
-  return 0;
+  /*
+  Known working solution:
+  image_.quantizeColorSpace(Magick::RGBColorspace);
+  image_.quantizeColors(256);
+  image_.quantize();
+  image_.modifyImage();
+  */
 }

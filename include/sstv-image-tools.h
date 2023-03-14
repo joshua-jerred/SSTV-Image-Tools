@@ -57,6 +57,8 @@ class SstvImage {
   int GetWidth() const { return width_; }
   int GetHeight() const { return height_; }
 
+  void AdjustColors();
+
  private:
   void Scale();
   
