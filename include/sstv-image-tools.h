@@ -53,9 +53,9 @@ class SstvImage {
                    const SstvImage::Color &color = {-2, -2, -2});
   void AddMessage(std::string message);
 
-  bool GetPixel(int x, int y, SstvImage::Pixel &pixel);
-  int GetWidth() { return width_; }
-  int GetHeight() { return height_; }
+  bool GetPixel(const int x, const int y, SstvImage::Pixel &pixel);
+  int GetWidth() const { return width_; }
+  int GetHeight() const { return height_; }
 
  private:
   void Scale();

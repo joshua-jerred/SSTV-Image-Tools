@@ -54,7 +54,7 @@ void SstvImage::AddCallSign(const std::string &callsign,
   image_.draw(draw_list);
 }
 
-bool SstvImage::GetPixel(int x, int y, SstvImage::Pixel &pixel) {
+bool SstvImage::GetPixel(const int x, const int y, SstvImage::Pixel &pixel) {
   if (x < 0 || x >= width_ || y < 0 || y >= height_) {
     return false;
   }
