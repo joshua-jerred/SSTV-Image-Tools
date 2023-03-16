@@ -1,13 +1,22 @@
 #include "sstv-image-tools.h"
 
 #include <Magick++/Color.h>
+
 #include <iostream>
 #include <list>
 
-SstvImage::Color::Color(int red, int green, int blue) {
+SstvImage::Color::Color(float red, float green, float blue) {
+  if (red < 0.0 || red > 1.0 || green < 0.0 || green > 1.0 || blue < 0.0 ||
+      blue > 1.0) {
+    throw SstvImageToolsException("Invalid color value");
+  }
   this->r = red;
   this->g = green;
   this->b = blue;
+}
+
+Magick::ColorRGB SstvImage::Color::GetMagickColor() const {
+  return Magick::ColorRGB(r, g, b);
 }
 
 SstvImage::SstvImage(SstvImage::Mode mode, std::string source_image_path,
@@ -38,29 +47,68 @@ void SstvImage::Write() {
 }
 
 void SstvImage::AddCallSign(const std::string &callsign,
-                            const SstvImage::Color &color) {
-  (void)color;
+                            const SstvImage::Color &fill_color,
+                            const SstvImage::Color &stroke_color) {
+  (void)fill_color;
+  (void)stroke_color;
 
-  int font_size = 25 * height_scaler_;
+  int font_size = kCallSignFontHeight_ * height_scaler_;
 
   std::vector<Magick::Drawable> draw_list(
-    {Magick::DrawableFont("Arial-Bold"), 
-    Magick::DrawablePointSize(font_size), 
-    Magick::DrawableText(0, 0 + font_size * 0.8, callsign),
-    Magick::DrawableStrokeColor("red"),
-    Magick::DrawableStrokeWidth(2),
-    Magick::DrawableStrokeAntialias(true),
-    Magick::DrawableFillColor("green")}
-);
+      {Magick::DrawableFont("Arial-Bold"), Magick::DrawablePointSize(font_size),
+       Magick::DrawableText(0, 0 + font_size * 0.8, callsign),
+       Magick::DrawableStrokeColor(stroke_color.GetMagickColor()),
+       Magick::DrawableStrokeWidth(2), Magick::DrawableStrokeAntialias(true),
+       Magick::DrawableFillColor(fill_color.GetMagickColor())});
 
   image_.draw(draw_list);
+}
+
+void SstvImage::AddText(const std::vector<std::string> &text,
+                        const bool left_column,
+                        const SstvImage::Color fill_color,
+                        const SstvImage::Color stroke_color) {
+  int font_size = 10 * height_scaler_;
+
+  std::vector<Magick::Drawable> draw_list(
+      {Magick::DrawableFont("Arial-Bold"), Magick::DrawablePointSize(font_size),
+       Magick::DrawableFillColor(fill_color.GetMagickColor()),
+       Magick::DrawableStrokeColor(stroke_color.GetMagickColor()),
+       Magick::DrawableStrokeWidth(1)});
+
+  int y = left_column ? 0 : GetWidth() / 2;
+
+  int i = 1;
+  for (auto line : text) {
+    draw_list.push_back(Magick::DrawableText(
+        y, GetHeight() + font_size * 0.8 - (i * font_size), line));
+    i++;
+  }
+
+  image_.draw(draw_list);
+}
+
+void SstvImage::AdjustColors() {
+  image_.quantizeColorSpace(Magick::RGBColorspace);
+  image_.quantizeColors(256);
+  image_.quantize();
+  image_.modifyImage();
+  image_.gamma(1.7);
+  image_.enhance();
+
+  /*
+  This is a hack to deal with the color space issues when reading pixel values.
+  Not a fan of this solution, and it needs to be fixed, but it works for now.
+  */
+  image_.write("tmp.png");
+  image_.read("tmp.png");
 }
 
 bool SstvImage::GetPixel(const int x, const int y, SstvImage::Pixel &pixel) {
   if (x < 0 || x >= width_ || y < 0 || y >= height_) {
     return false;
   }
-  
+
   MagickCore::Quantum *pixels = image_.getPixels(0, 0, width_, height_);
   unsigned index = (y * width_ + x) * image_.channels();
 
@@ -68,20 +116,6 @@ bool SstvImage::GetPixel(const int x, const int y, SstvImage::Pixel &pixel) {
   pixel.g = pixels[index + 1];
   pixel.b = pixels[index + 2];
   return true;
-}
-
-void SstvImage::AdjustColors() {
-    /*
-  This is a hack to deal with the color space issues. Not a fan of this solution.
-  */
-  image_.quantizeColorSpace(Magick::RGBColorspace);
-  image_.quantizeColors(256);
-  image_.quantize();
-  image_.modifyImage();
-  image_.gamma(1.7);
-  image_.enhance();
-  image_.write("tmp.png");
-  image_.read("tmp.png");
 }
 
 void SstvImage::Scale() {
@@ -123,42 +157,4 @@ void SstvImage::Scale() {
     crop_size.aspect(true);
     image_.resize(crop_size);
   }
-
-  //image_.enhance();
-  /*
-  image_.quantizeColorSpace(Magick::RGBColorspace);
-  image_.quantizeColors(256);
-  image_.quantize();
-  image_.modifyImage();
-  image_.colorSpace(Magick::sRGBColorspace);
-  image_.type(Magick::TrueColorType);
-  if (image_.colorSpace() == Magick::sRGBColorspace){
-    std::cout << "sRGBColorspace" << std::endl;
-  } else if (image_.colorSpace() == Magick::RGBColorspace) {
-    std::cout << "RGBColorspace" << std::endl;
-  } else if (image_.colorSpace() == Magick::CMYColorspace) {
-    std::cout << "CMYColorspace" << std::endl;
-  } else if (image_.colorSpace() == Magick::GRAYColorspace) {
-    std::cout << "GRAYColorspace" << std::endl;
-  } else {
-    std::cout << "Unknown colorspace" << std::endl;
-  }
-
-  std::cout << "Channels: " << image_.channels() << std::endl;
-  image_.channel(Magick::RedChannel);
-  */
-
-  //image_.quantizeColorSpace(Magick::RGBColorspace); // THESE
-  //image_.quantizeColors(256); // THESE
-  //image_.quantize(); // THESE
-  //image_.normalize();
-  //image_.enhance(); Made things a lot worse
-
-  /*
-  Known working solution:
-  image_.quantizeColorSpace(Magick::RGBColorspace);
-  image_.quantizeColors(256);
-  image_.quantize();
-  image_.modifyImage();
-  */
 }
