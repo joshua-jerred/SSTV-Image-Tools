@@ -79,9 +79,9 @@ void SstvImage::AddText(const std::vector<std::string> &text,
   int y = left_column ? 0 : GetWidth() / 2;
 
   int i = 1;
-  for (auto line : text) {
+  for (int j = text.size() - 1; j >= 0; j-- ) { // Reverse order
     draw_list.push_back(Magick::DrawableText(
-        y, GetHeight() + font_size * 0.8 - (i * font_size), line));
+        y, GetHeight() + font_size * 0.8 - (i * font_size), text[j]));
     i++;
   }
 
