@@ -18,6 +18,7 @@ include_directories(include)
 add_library(sstv-image-tools
 	src/sstv-image-tools.cpp
 )
+target_include_directories(sstv-image-tools PUBLIC include)
 add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=8)
 add_definitions(-DMAGICKCORE_HDRI_ENABLE=1) # Required or there are linking errors with Magick::Color::Color
 find_package(ImageMagick COMPONENTS Magick++)
